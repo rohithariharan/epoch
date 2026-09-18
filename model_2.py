@@ -117,7 +117,7 @@ def simulate_live_patient(ecg_base_dir, xray_base_dir):
     patient_triage_payload = {
         "ecg_risk": process_matlab_ecg(ecg_path),
         "xray_opacity": vision_engine.predict_image(xray_path),
-        "lesion_volume": vision_engine.predict_image(xray_path)
+        "lesion_volume": 0.0  # Placeholder since CT directories are not currently ingested
     }
     
     return patient_triage_payload
