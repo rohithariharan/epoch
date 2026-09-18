@@ -1,4 +1,4 @@
-# Team Epoch: CardioPulmo-Sepsis AI 🩺⚡
+# Team Epoch: CardioPulmo-Sepsis AI
 
 > **CardioPulmo-Sepsis AI** is a real-time multi-modal emergency triage system that fuses 1D ECG telemetry, 2D chest radiographs, and continuous patient vitals. It drives a late-fusion architecture to predict systemic sepsis and organ deterioration cascades hours before clinical failure.
 
