@@ -172,7 +172,7 @@ def train_and_evaluate_model(csv_path):
 
     return model, df
 
-# INFERENCE ENGINE (FASTAPI INTEGRATION)
+# 4. INFERENCE ENGINE (FASTAPI INTEGRATION)
 def predict_sepsis_from_df(patient_df, model, num_mc_passes=10, optimal_threshold=0.50):
     model.train() # Keep dropout active for MC uncertainty estimation
     model.to(device)
@@ -226,6 +226,44 @@ def analyze_multiple_patients(multi_patient_df, model):
             continue
         batch_results.append(predict_sepsis_from_df(patient_data, model))
     return batch_results
+
+# ==========================================
+# 5. REQUIRED ADAPTER FUNCTIONS FOR MAIN.PY
+# ==========================================
+def load_sepsis_model():
+    """Initializes and loads the trained Sepsis GRU model for FastAPI startup."""
+    input_dim = len(FEATURE_COLS) * 2
+    model = SepsisTemporalGRU(input_dim=input_dim, hidden_dim=64).to(device)
+    
+    weights_path = "sepsis_gru_weights.pth"
+    if os.path.exists(weights_path):
+        try:
+            checkpoint = torch.load(weights_path, map_location=device)
+            model.load_state_dict(checkpoint['state_dict'])
+        except Exception as e:
+            print(f"Warning: Could not load saved weights ({e}). Using initialized model.")
+    model.eval()
+    return model
+
+def run_sepsis_inference(csv_path: str, model, current_hour: int = 36) -> dict:
+    """Runs inference on a patient CSV file for FastAPI backend assessment."""
+    df = pd.read_csv(csv_path)
+    
+    if 'Patient_ID' not in df.columns:
+        df['Patient_ID'] = "P001"
+        
+    result = predict_sepsis_from_df(df, model)
+    
+    latest_hr = float(df['HR'].iloc[-1]) if 'HR' in df.columns and not df['HR'].isna().all() else 80.0
+    latest_map = float(df['MAP'].iloc[-1]) if 'MAP' in df.columns and not df['MAP'].isna().all() else 80.0
+    
+    return {
+        "risk_3h": result["risk_3h"],
+        "risk_6h": result["risk_6h"],
+        "risk_12h": result["risk_12h"],
+        "latest_hr": latest_hr,
+        "latest_map": latest_map
+    }
 
 if __name__ == "__main__":
     demo_file = "high_risk.csv" 
